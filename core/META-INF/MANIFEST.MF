@@ -4,4 +4,6 @@ Bundle-Name: Utils
 Bundle-SymbolicName: org.github.rusnavu.utils
 Bundle-Version: 0.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Export-Package: org.github.rusnavu.io
+Export-Package: org.github.rusnavu.events,
+ org.github.rusnavu.io
+Require-Bundle: org.eclipse.core.runtime

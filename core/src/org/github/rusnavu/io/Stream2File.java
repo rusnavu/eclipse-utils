@@ -24,7 +24,7 @@ public class Stream2File implements Runnable {
 			try {
 				out = new FileOutputStream(file);
 			} catch (Throwable e) {
-				return;
+				throw new RuntimeException(e);
 			} finally {
 				file.notify();
 			}
@@ -37,11 +37,14 @@ public class Stream2File implements Runnable {
 	}
 
 	public static void copy(InputStream in, File file) throws IOException {
-		new Thread(new Stream2File(in, file));
-		try {
-			file.wait();
-		} catch (InterruptedException e) {
-			throw new IOException("Thread interrupted", e);
+		synchronized (file) {
+			Thread thread = new Thread(new Stream2File(in, file));
+			try {
+				thread.start();
+				file.wait();
+			} catch (InterruptedException e) {
+				throw new IOException("Thread interrupted", e);
+			}
 		}
 	}
 
