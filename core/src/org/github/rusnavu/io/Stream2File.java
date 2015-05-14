@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.io.IOUtils;
+
 public class Stream2File implements Runnable {
 
 	private final InputStream in;
@@ -29,7 +31,7 @@ public class Stream2File implements Runnable {
 				file.notify();
 			}
 			try {
-				copy(in, out);
+				IOUtils.copy(in, out);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -48,26 +50,22 @@ public class Stream2File implements Runnable {
 		}
 	}
 
+	/**
+	 * @deprecated Use {@link IOUtils#copy(InputStream, OutputStream)}
+	 * @param input
+	 * @param output
+	 * @throws IOException
+	 */
 	public static void copy(InputStream input, OutputStream output) throws IOException {
-		int readed;
-		byte[] buf = new byte[1024];
-		try {
-			while ((readed = input.read(buf)) > 0) {
-				output.write(buf, 0, readed);
-			}
-		} finally {
-			close(output);
-			close(input);
-		}
+		IOUtils.copy(input, output);
 	}
 
+	/**
+	 * @deprecated Use {@link IOUtils#closeQuietly(Closeable)}
+	 * @param res
+	 */
 	public static void close(Closeable res) {
-		try {
-			res.close();
-		} catch (Throwable e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		IOUtils.closeQuietly(res);
 	}
 
 }

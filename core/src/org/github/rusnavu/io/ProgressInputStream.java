@@ -4,58 +4,59 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
 
 public class ProgressInputStream extends InputStream {
 
 	private final InputStream stream;
 	private final IProgressMonitor monitor;
 	private final int scale;
+	private long worked;
 
-	public ProgressInputStream(InputStream stream, IProgressMonitor monitor, int ticks) {
-		this(stream, monitor, ticks, IProgressMonitor.UNKNOWN);
-	}
-
-	public ProgressInputStream(InputStream stream, IProgressMonitor monitor, int ticks, long length) {
-		assert length == IProgressMonitor.UNKNOWN || length > 0;
+	public ProgressInputStream(InputStream stream, IProgressMonitor monitor, long length) {
 		this.stream = stream;
-		int totalWork;
-		if ((length == IProgressMonitor.UNKNOWN) || (length < Integer.MAX_VALUE)) {
-			totalWork = (int) length;
-			scale = 1;
-		} else {
-			scale = (int) (length / Integer.MAX_VALUE);
-			totalWork = (int) (length / scale);
-		}
-		this.monitor = new SubProgressMonitor(monitor, totalWork);
-		this.monitor.beginTask("", ticks);
+		this.monitor = monitor;
+		this.scale = (int) (length / Integer.MAX_VALUE) + 1;
+		int total;
+		if (length <= 0)
+			total = IProgressMonitor.UNKNOWN;
+		else if (length > Integer.MAX_VALUE) {
+			total = (int) (length / scale);
+		} else
+			total = (int) length;
+		monitor.beginTask("Reading data", total);
 	}
 
 	private int worked(int readed) {
-		monitor.worked(readed/scale);
+		worked += readed;
+		if (worked > scale) {
+			int part = (int)(worked/scale);
+			monitor.worked(part);
+			worked -= scale*part;
+		}
 		return readed;
 	}
 
 	@Override
 	public int read(byte[] b) throws IOException {
-		return worked(stream.read(b)/scale);
+		return worked(stream.read(b));
 	}
 
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
-		return worked(stream.read(b, off, len)/scale);
+		return worked(stream.read(b, off, len));
 	}
 
 	@Override
 	public int read() throws IOException {
 		int read;
 		if ((read = stream.read()) >= 0)
-			monitor.worked(1/scale);
+			worked(1);
 		return read;
 	}
 
 	@Override
 	public void close() throws IOException {
+		monitor.done();
 		stream.close();
 	}
 
